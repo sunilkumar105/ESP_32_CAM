@@ -7,6 +7,7 @@
 #include <WiFi.h>
 
 #define flash_pin 4
+#define SEND_FB_AFTER_CLEARING_BUFFER
 
 // Pin definition for CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM 32
@@ -31,7 +32,7 @@ int pictureNumber = 0;
 
 const char *ssid = "Embinary";
 const char *password = "Embinary@0108";
-const char *post_url = "http://192.168.1.10:5000/upload"; // Location where images are POSTED
+const char *post_url = "http://192.168.1.12:5000/upload"; // Location where images are POSTED
 bool internet_connected = false;
 
 bool init_wifi(void);
@@ -99,7 +100,7 @@ void loop()
 {
   Serial.println("Going to sleep now");
   click_and_send_image_to_http();
-  delay(2000);
+  // delay(2000);
 }
 
 bool init_wifi()
@@ -124,13 +125,39 @@ void click_and_send_image_to_http(void)
 
   digitalWrite(flash_pin, HIGH);
   delay(10);
-  // Take Picture with Camera
+#ifdef SEND_FB_AFTER_CLEARING_BUFFER
+  fb = esp_camera_fb_get();
+  // Uncomment the following lines if you're getting old pictures
+  esp_camera_fb_return(fb); // dispose the buffered image
+  fb = NULL;                // reset to capture errors
   fb = esp_camera_fb_get();
   if (!fb)
   {
-    Serial.println("Camera capture failed");
-    return;
+    fb = NULL; // reset to capture errors
+    fb = esp_camera_fb_get();
+    if (!fb)
+    {
+      Serial.println("Camera capture failed");
+      return;
+    }
   }
+  else
+  {
+    // Serial.println("Image sent to FTP");
+  }
+#else
+  fb = esp_camera_fb_get();
+  if (!fb)
+  {
+    fb = NULL; // reset to capture errors
+    fb = esp_camera_fb_get();
+    if (!fb)
+    {
+      Serial.println("Camera capture failed");
+      return;
+    }
+  }
+#endif
   digitalWrite(4, LOW);
 
   HTTPClient http;
