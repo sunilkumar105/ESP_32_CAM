@@ -38,6 +38,14 @@ bool internet_connected = false;
 bool init_wifi(void);
 void click_and_send_image_to_http(void);
 
+void print_elapsed_time(void)
+{
+  unsigned long current_time = micros();
+  Serial.print("Elapsed Time: ");
+  Serial.print(current_time/1000);
+  Serial.println(" mili sec");
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -162,17 +170,21 @@ void click_and_send_image_to_http(void)
 
   HTTPClient http;
   Serial.print("[HTTP] begin...\n");
+  print_elapsed_time();
   // configure traged server and url
   http.begin(post_url); // HTTP
-  Serial.print("[HTTP] POST...\n");
+  Serial.print("[HTTP] Starting Post ...\n");
+  print_elapsed_time();
   // start connection and send HTTP header
   int httpCode = http.sendRequest("POST", fb->buf, fb->len); // we simply put the whole image in the post body.
-
+  Serial.print("[HTTP] Post Completed ...\n");
+  print_elapsed_time();
   // httpCode will be negative on error
   if (httpCode > 0)
   {
     // HTTP header has been send and Server response header has been handled
     Serial.printf("[HTTP] POST... code: %d\n", httpCode);
+    print_elapsed_time();
     // file found at server
     if (httpCode == HTTP_CODE_OK)
     {
@@ -183,6 +195,7 @@ void click_and_send_image_to_http(void)
   else
   {
     Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    print_elapsed_time();
   }
 
   http.end();
